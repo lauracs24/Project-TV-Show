@@ -1,7 +1,9 @@
-// Level 100 - show all episodes on the page
+// Level 200 - refactor before adding new features
+
+let allEpisodes = [];
 
 function setup() {
-  const allEpisodes = getAllEpisodes();
+  allEpisodes = getAllEpisodes();
   makePageForEpisodes(allEpisodes);
 }
 
@@ -9,40 +11,46 @@ function makePageForEpisodes(episodeList) {
   const rootElem = document.getElementById("root");
   rootElem.innerHTML = "";
 
-  episodeList.forEach(function (episode) {
-    const card = document.createElement("div");
+  const pageTitle = document.createElement("h1");
+  pageTitle.textContent = `Got ${episodeList.length} episode(s)`;
 
-    // Title + episode code
-    const title = document.createElement("h2");
-    title.textContent =
-      episode.name +
-      " - " +
-      formatEpisodeCode(episode);
+  const episodeContainer = document.createElement("section");
+  episodeContainer.className = "episode-container";
 
-    // Image
-    const image = document.createElement("img");
-    image.src = episode.image.medium;
-    image.alt = episode.name;
-
-    // Summary
-    const summary = document.createElement("div");
-    summary.innerHTML = episode.summary;
-
-    // Add everything to card
-    card.appendChild(title);
-    card.appendChild(image);
-    card.appendChild(summary);
-
-    // Add card to page
-    rootElem.appendChild(card);
+  episodeList.forEach((episode) => {
+    const episodeCard = createEpisodeCard(episode);
+    episodeContainer.appendChild(episodeCard);
   });
+
+  rootElem.appendChild(pageTitle);
+  rootElem.appendChild(episodeContainer);
 }
 
-// Format like S01E02
+function createEpisodeCard(episode) {
+  const card = document.createElement("article");
+  card.className = "episode-card";
+
+  const title = document.createElement("h2");
+  title.textContent = `${episode.name} - ${formatEpisodeCode(episode)}`;
+
+  const image = document.createElement("img");
+  image.src = episode.image.medium;
+  image.alt = episode.name;
+
+  const summary = document.createElement("div");
+  summary.innerHTML = episode.summary;
+
+  card.appendChild(title);
+  card.appendChild(image);
+  card.appendChild(summary);
+
+  return card;
+}
+
 function formatEpisodeCode(episode) {
   const season = String(episode.season).padStart(2, "0");
   const number = String(episode.number).padStart(2, "0");
-  return "S" + season + "E" + number;
+  return `S${season}E${number}`;
 }
 
 window.onload = setup;
