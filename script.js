@@ -1,23 +1,62 @@
-// Level 200 - refactor + search + episode selector
+// Level 300 - fetch episodes from API instead of episodes.js
 
 let allEpisodes = [];
 let searchTerm = "";
 let selectedEpisodeId = "all";
+let isLoading = true;
+let hasError = false;
 
 function setup() {
-  allEpisodes = getAllEpisodes();
+  loadEpisodes();
+}
+
+async function loadEpisodes() {
+  isLoading = true;
+  hasError = false;
   renderPage();
+
+  try {
+    const response = await fetch("https://api.tvmaze.com/shows/82/episodes");
+
+    if (!response.ok) {
+      throw new Error("Failed to load episodes");
+    }
+
+    const episodeData = await response.json();
+    allEpisodes = episodeData;
+    isLoading = false;
+    renderPage();
+  } catch (error) {
+    isLoading = false;
+    hasError = true;
+    renderPage();
+  }
 }
 
 function renderPage() {
   const rootElem = document.getElementById("root");
   rootElem.innerHTML = "";
 
-  const filteredEpisodes = getFilteredEpisodes();
-
   const pageTitle = document.createElement("h1");
   pageTitle.textContent = "TV Show Episodes";
 
+  rootElem.appendChild(pageTitle);
+
+  if (isLoading) {
+    const loadingMessage = document.createElement("p");
+    loadingMessage.textContent = "Loading episodes, please wait...";
+    rootElem.appendChild(loadingMessage);
+    return;
+  }
+
+  if (hasError) {
+    const errorMessage = document.createElement("p");
+    errorMessage.textContent = "Sorry, something went wrong while loading episodes.";
+    rootElem.appendChild(errorMessage);
+    return;
+  }
+
+  const filteredEpisodes = getFilteredEpisodes();
   const controls = createControls();
 
   const resultsCount = document.createElement("p");
@@ -37,13 +76,7 @@ function renderPage() {
   sourceParagraph.innerHTML =
     'Data originally comes from <a href="https://tvmaze.com/" target="_blank" rel="noopener noreferrer">TVMaze.com</a>.';
 
-  rootElem.append(
-    pageTitle,
-    controls,
-    resultsCount,
-    episodeContainer,
-    sourceParagraph
-  );
+  rootElem.append(controls, resultsCount, episodeContainer, sourceParagraph);
 }
 
 function createControls() {
@@ -92,8 +125,8 @@ function createControls() {
   episodeSelect.value = selectedEpisodeId;
 
   selectGroup.append(selectLabel, episodeSelect);
-
   controlsWrapper.append(searchGroup, selectGroup);
+
   return controlsWrapper;
 }
 
