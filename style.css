@@ -14,10 +14,7 @@ body {
 h1 {
   text-align: center;
   margin-bottom: 24px;
-}
-
-.selected-show-heading {
-  margin-bottom: 20px;
+  color: #222;
 }
 
 .controls {
@@ -25,6 +22,7 @@ h1 {
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 20px;
+  justify-content: space-between;
   align-items: end;
 }
 
@@ -32,7 +30,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 280px;
+  min-width: 220px;
   flex: 1;
 }
 
@@ -53,85 +51,6 @@ h1 {
   font-weight: bold;
 }
 
-.shows-container {
-  display: grid;
-  gap: 20px;
-}
-
-.show-card {
-  background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.show-card-header {
-  margin-bottom: 12px;
-}
-
-.show-name-button {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  text-align: left;
-  color: #222;
-}
-
-.show-name-button:hover,
-.show-name-button:focus {
-  text-decoration: underline;
-}
-
-.show-card-content {
-  display: grid;
-  grid-template-columns: 160px 1fr 220px;
-  gap: 16px;
-  align-items: start;
-}
-
-.show-image {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  display: block;
-}
-
-.show-summary p {
-  margin-top: 0;
-  line-height: 1.6;
-}
-
-.show-details {
-  background-color: #fafafa;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.show-details p {
-  margin-top: 0;
-  margin-bottom: 12px;
-}
-
-.back-button {
-  margin-bottom: 16px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  background-color: #ffffff;
-  cursor: pointer;
-}
-
-.back-button:hover,
-.back-button:focus {
-  text-decoration: underline;
-}
-
 .episode-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -146,10 +65,11 @@ h1 {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.episode-card h3 {
+.episode-card h2 {
   font-size: 1.1rem;
   margin-top: 0;
   margin-bottom: 12px;
+  color: #222;
 }
 
 .episode-card img {
@@ -162,15 +82,12 @@ h1 {
 
 .episode-card p {
   line-height: 1.5;
+  color: #222;
 }
 
 .source-text {
   margin-top: 24px;
   text-align: center;
-}
-
-.error-message {
-  font-weight: bold;
 }
 
 a {
@@ -180,14 +97,4 @@ a {
 a:hover,
 a:focus {
   text-decoration: underline;
-}
-
-@media (max-width: 900px) {
-  .show-card-content {
-    grid-template-columns: 1fr;
-  }
-
-  .show-image {
-    max-width: 220px;
-  }
 }
