@@ -1,18 +1,8 @@
-// Level 500 completed by Laura
-
 let allShows = [];
 let allEpisodes = [];
-
-let showSearchTerm = "";
-let episodeSearchTerm = "";
+let searchTerm = "";
 let selectedEpisodeId = "all";
 let selectedShowId = "";
-let currentView = "shows";
-
-let isLoadingShows = true;
-let isLoadingEpisodes = false;
-let hasError = false;
-let errorMessage = "";
 
 const cache = {};
 
@@ -37,37 +27,31 @@ async function fetchData(url) {
 }
 
 async function loadShows() {
-  isLoadingShows = true;
-  hasError = false;
-  errorMessage = "";
-  renderPage();
+  const rootElem = document.getElementById("root");
+  rootElem.innerHTML = "<p>Loading shows, please wait...</p>";
 
   try {
     const shows = await fetchData("https://api.tvmaze.com/shows");
 
-    allShows = shows.sort((showA, showB) =>
-      showA.name.localeCompare(showB.name, undefined, {
-        sensitivity: "base",
-      })
+    allShows = shows.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
     );
 
-    isLoadingShows = false;
-    renderPage();
+    if (allShows.length > 0) {
+      selectedShowId = String(allShows[0].id);
+      await loadEpisodesForShow(selectedShowId);
+    } else {
+      rootElem.innerHTML = "<p>No shows found.</p>";
+    }
   } catch (error) {
-    isLoadingShows = false;
-    hasError = true;
-    errorMessage = "Sorry, something went wrong while loading shows.";
-    renderPage();
+    rootElem.innerHTML =
+      "<p>Sorry, something went wrong while loading shows.</p>";
   }
 }
 
 async function loadEpisodesForShow(showId) {
-  isLoadingEpisodes = true;
-  hasError = false;
-  errorMessage = "";
-  selectedEpisodeId = "all";
-  episodeSearchTerm = "";
-  renderPage();
+  const rootElem = document.getElementById("root");
+  rootElem.innerHTML = "<p>Loading episodes, please wait...</p>";
 
   try {
     const episodes = await fetchData(
@@ -75,180 +59,68 @@ async function loadEpisodesForShow(showId) {
     );
 
     allEpisodes = episodes;
-    isLoadingEpisodes = false;
-    currentView = "episodes";
-    renderPage();
+    searchTerm = "";
+    selectedEpisodeId = "all";
+    makePageForEpisodes(getFilteredEpisodes());
   } catch (error) {
-    isLoadingEpisodes = false;
-    hasError = true;
-    errorMessage = "Sorry, something went wrong while loading episodes.";
-    renderPage();
+    rootElem.innerHTML =
+      "<p>Sorry, something went wrong while loading episodes.</p>";
   }
 }
 
-function renderPage() {
+function makePageForEpisodes(episodeList) {
   const rootElem = document.getElementById("root");
   rootElem.innerHTML = "";
 
   const pageTitle = document.createElement("h1");
   pageTitle.textContent = "TV Show Project";
-  rootElem.appendChild(pageTitle);
 
-  if (hasError) {
-    const errorElem = document.createElement("p");
-    errorElem.className = "error-message";
-    errorElem.textContent = errorMessage;
-    rootElem.appendChild(errorElem);
-    return;
-  }
+  const controls = document.createElement("section");
+  controls.className = "controls";
 
-  if (isLoadingShows) {
-    const loadingElem = document.createElement("p");
-    loadingElem.textContent = "Loading shows, please wait...";
-    rootElem.appendChild(loadingElem);
-    return;
-  }
+  const showGroup = document.createElement("div");
+  showGroup.className = "control-group";
 
-  if (currentView === "shows") {
-    renderShowsView(rootElem);
-    return;
-  }
+  const showLabel = document.createElement("label");
+  showLabel.setAttribute("for", "show-select");
+  showLabel.textContent = "Select show";
 
-  renderEpisodesView(rootElem);
-}
+  const showSelect = document.createElement("select");
+  showSelect.id = "show-select";
+  showSelect.addEventListener("change", handleShowSelect);
 
-function renderShowsView(rootElem) {
-  const controls = createShowControls();
-  rootElem.appendChild(controls);
-
-  const filteredShows = getFilteredShows();
-
-  const resultsCount = document.createElement("p");
-  resultsCount.className = "results-count";
-  resultsCount.textContent = `Found ${filteredShows.length} / ${allShows.length} show(s)`;
-  rootElem.appendChild(resultsCount);
-
-  const showsContainer = document.createElement("section");
-  showsContainer.className = "shows-container";
-
-  filteredShows.forEach((show) => {
-    const showCard = createShowCard(show);
-    showsContainer.appendChild(showCard);
+  allShows.forEach((show) => {
+    const option = document.createElement("option");
+    option.value = String(show.id);
+    option.textContent = show.name;
+    showSelect.appendChild(option);
   });
 
-  rootElem.appendChild(showsContainer);
-
-  const sourceParagraph = document.createElement("p");
-  sourceParagraph.className = "source-text";
-  sourceParagraph.innerHTML =
-    'Data originally comes from <a href="https://tvmaze.com/" target="_blank" rel="noopener noreferrer">TVMaze.com</a>.';
-
-  rootElem.appendChild(sourceParagraph);
-}
-
-function renderEpisodesView(rootElem) {
-  const backLink = document.createElement("button");
-  backLink.className = "back-button";
-  backLink.type = "button";
-  backLink.textContent = "← Back to shows";
-  backLink.addEventListener("click", handleBackToShows);
-
-  rootElem.appendChild(backLink);
-
-  const selectedShow = getSelectedShow();
-
-  if (selectedShow) {
-    const showHeading = document.createElement("h2");
-    showHeading.className = "selected-show-heading";
-    showHeading.textContent = selectedShow.name;
-    rootElem.appendChild(showHeading);
-  }
-
-  const controls = createEpisodeControls();
-  rootElem.appendChild(controls);
-
-  if (isLoadingEpisodes) {
-    const loadingElem = document.createElement("p");
-    loadingElem.textContent = "Loading episodes, please wait...";
-    rootElem.appendChild(loadingElem);
-    return;
-  }
-
-  const filteredEpisodes = getFilteredEpisodes();
-
-  const resultsCount = document.createElement("p");
-  resultsCount.className = "results-count";
-  resultsCount.textContent = `Displaying ${filteredEpisodes.length} / ${allEpisodes.length} episode(s)`;
-  rootElem.appendChild(resultsCount);
-
-  const episodeContainer = document.createElement("section");
-  episodeContainer.className = "episode-container";
-
-  filteredEpisodes.forEach((episode) => {
-    const episodeCard = createEpisodeCard(episode);
-    episodeContainer.appendChild(episodeCard);
-  });
-
-  rootElem.appendChild(episodeContainer);
-
-  const sourceParagraph = document.createElement("p");
-  sourceParagraph.className = "source-text";
-  sourceParagraph.innerHTML =
-    'Data originally comes from <a href="https://tvmaze.com/" target="_blank" rel="noopener noreferrer">TVMaze.com</a>.';
-
-  rootElem.appendChild(sourceParagraph);
-}
-
-function createShowControls() {
-  const controlsWrapper = document.createElement("section");
-  controlsWrapper.className = "controls";
+  showSelect.value = selectedShowId;
+  showGroup.append(showLabel, showSelect);
 
   const searchGroup = document.createElement("div");
   searchGroup.className = "control-group";
 
   const searchLabel = document.createElement("label");
-  searchLabel.setAttribute("for", "show-search-input");
-  searchLabel.textContent = "Search shows";
-
-  const searchInput = document.createElement("input");
-  searchInput.id = "show-search-input";
-  searchInput.type = "text";
-  searchInput.placeholder = "Search by name, genre, or summary";
-  searchInput.value = showSearchTerm;
-  searchInput.addEventListener("input", handleShowSearchInput);
-
-  searchGroup.append(searchLabel, searchInput);
-  controlsWrapper.appendChild(searchGroup);
-
-  return controlsWrapper;
-}
-
-function createEpisodeControls() {
-  const controlsWrapper = document.createElement("section");
-  controlsWrapper.className = "controls";
-
-  const searchGroup = document.createElement("div");
-  searchGroup.className = "control-group";
-
-  const searchLabel = document.createElement("label");
-  searchLabel.setAttribute("for", "episode-search-input");
+  searchLabel.setAttribute("for", "search-input");
   searchLabel.textContent = "Search episodes";
 
   const searchInput = document.createElement("input");
-  searchInput.id = "episode-search-input";
+  searchInput.id = "search-input";
   searchInput.type = "text";
   searchInput.placeholder = "Search by episode name or summary";
-  searchInput.value = episodeSearchTerm;
-  searchInput.addEventListener("input", handleEpisodeSearchInput);
+  searchInput.value = searchTerm;
+  searchInput.addEventListener("input", handleSearchInput);
 
   searchGroup.append(searchLabel, searchInput);
 
-  const selectGroup = document.createElement("div");
-  selectGroup.className = "control-group";
+  const episodeGroup = document.createElement("div");
+  episodeGroup.className = "control-group";
 
-  const selectLabel = document.createElement("label");
-  selectLabel.setAttribute("for", "episode-select");
-  selectLabel.textContent = "Select episode";
+  const episodeLabel = document.createElement("label");
+  episodeLabel.setAttribute("for", "episode-select");
+  episodeLabel.textContent = "Select episode";
 
   const episodeSelect = document.createElement("select");
   episodeSelect.id = "episode-select";
@@ -267,71 +139,41 @@ function createEpisodeControls() {
   });
 
   episodeSelect.value = selectedEpisodeId;
+  episodeGroup.append(episodeLabel, episodeSelect);
 
-  selectGroup.append(selectLabel, episodeSelect);
-  controlsWrapper.append(searchGroup, selectGroup);
+  controls.append(showGroup, searchGroup, episodeGroup);
 
-  return controlsWrapper;
-}
+  const resultsCount = document.createElement("p");
+  resultsCount.className = "results-count";
+  resultsCount.textContent = `Displaying ${episodeList.length} / ${allEpisodes.length} episode(s)`;
 
-function createShowCard(show) {
-  const card = document.createElement("article");
-  card.className = "show-card";
+  const episodeContainer = document.createElement("section");
+  episodeContainer.className = "episode-container";
 
-  const header = document.createElement("div");
-  header.className = "show-card-header";
-
-  const nameButton = document.createElement("button");
-  nameButton.type = "button";
-  nameButton.className = "show-name-button";
-  nameButton.textContent = show.name;
-  nameButton.addEventListener("click", function () {
-    handleShowClick(show.id);
+  episodeList.forEach((episode) => {
+    const episodeCard = createEpisodeCard(episode);
+    episodeContainer.appendChild(episodeCard);
   });
 
-  header.appendChild(nameButton);
+  const sourceParagraph = document.createElement("p");
+  sourceParagraph.className = "source-text";
+  sourceParagraph.innerHTML =
+    'Data originally comes from <a href="https://tvmaze.com/" target="_blank" rel="noopener noreferrer">TVMaze.com</a>.';
 
-  const content = document.createElement("div");
-  content.className = "show-card-content";
-
-  const image = document.createElement("img");
-  image.className = "show-image";
-  image.src = show.image ? show.image.medium : "";
-  image.alt = show.name;
-
-  const summary = document.createElement("div");
-  summary.className = "show-summary";
-  summary.innerHTML = show.summary || "";
-
-  const details = document.createElement("div");
-  details.className = "show-details";
-
-  const rating = document.createElement("p");
-  rating.textContent = `Rating: ${
-    show.rating && show.rating.average ? show.rating.average : "N/A"
-  }`;
-
-  const genres = document.createElement("p");
-  genres.textContent = `Genres: ${show.genres.join(", ")}`;
-
-  const status = document.createElement("p");
-  status.textContent = `Status: ${show.status}`;
-
-  const runtime = document.createElement("p");
-  runtime.textContent = `Runtime: ${show.runtime || "N/A"}`;
-
-  details.append(rating, genres, status, runtime);
-  content.append(image, summary, details);
-  card.append(header, content);
-
-  return card;
+  rootElem.append(
+    pageTitle,
+    controls,
+    resultsCount,
+    episodeContainer,
+    sourceParagraph
+  );
 }
 
 function createEpisodeCard(episode) {
   const card = document.createElement("article");
   card.className = "episode-card";
 
-  const title = document.createElement("h3");
+  const title = document.createElement("h2");
   title.textContent = `${episode.name} - ${formatEpisodeCode(episode)}`;
 
   const image = document.createElement("img");
@@ -345,57 +187,19 @@ function createEpisodeCard(episode) {
   return card;
 }
 
-function handleShowSearchInput(event) {
-  showSearchTerm = event.target.value.toLowerCase();
-  renderPage();
-
-  const input = document.getElementById("show-search-input");
-  if (input) {
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
-  }
+function handleShowSelect(event) {
+  selectedShowId = event.target.value;
+  loadEpisodesForShow(selectedShowId);
 }
 
-function handleEpisodeSearchInput(event) {
-  episodeSearchTerm = event.target.value.toLowerCase();
-  renderPage();
-
-  const input = document.getElementById("episode-search-input");
-  if (input) {
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
-  }
+function handleSearchInput(event) {
+  searchTerm = event.target.value.toLowerCase();
+  makePageForEpisodes(getFilteredEpisodes());
 }
 
 function handleEpisodeSelect(event) {
   selectedEpisodeId = event.target.value;
-  renderPage();
-}
-
-function handleShowClick(showId) {
-  selectedShowId = String(showId);
-  loadEpisodesForShow(selectedShowId);
-}
-
-function handleBackToShows() {
-  currentView = "shows";
-  selectedEpisodeId = "all";
-  episodeSearchTerm = "";
-  renderPage();
-}
-
-function getFilteredShows() {
-  return allShows.filter((show) => {
-    const nameText = show.name.toLowerCase();
-    const genresText = show.genres.join(" ").toLowerCase();
-    const summaryText = stripHtml(show.summary || "").toLowerCase();
-
-    return (
-      nameText.includes(showSearchTerm) ||
-      genresText.includes(showSearchTerm) ||
-      summaryText.includes(showSearchTerm)
-    );
-  });
+  makePageForEpisodes(getFilteredEpisodes());
 }
 
 function getFilteredEpisodes() {
@@ -404,15 +208,13 @@ function getFilteredEpisodes() {
       selectedEpisodeId === "all" || String(episode.id) === selectedEpisodeId;
 
     const matchesSearch =
-      episode.name.toLowerCase().includes(episodeSearchTerm) ||
-      stripHtml(episode.summary || "").toLowerCase().includes(episodeSearchTerm);
+      episode.name.toLowerCase().includes(searchTerm) ||
+      stripHtml(episode.summary || "")
+        .toLowerCase()
+        .includes(searchTerm);
 
     return matchesSelectedEpisode && matchesSearch;
   });
-}
-
-function getSelectedShow() {
-  return allShows.find((show) => String(show.id) === selectedShowId);
 }
 
 function stripHtml(htmlText) {
